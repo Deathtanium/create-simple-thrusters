@@ -13,10 +13,6 @@ public final class ModBlocks {
     private static final SimpleThrustersRegistrate REGISTRATE =
             SimpleThrustersRegistrate.create(SimpleThrusters.MOD_ID);
 
-    static {
-        REGISTRATE.setCreativeTab(ModCreativeTabs.MAIN);
-    }
-
     public static final BlockEntry<CreativeThrusterBlock> CREATIVE_THRUSTER =
             REGISTRATE.block("creative_thruster", CreativeThrusterBlock::new)
                     .properties(ThrusterBlock::applyProperties)

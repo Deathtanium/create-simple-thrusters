@@ -1,8 +1,8 @@
 package com.deathtanium.simplethrusters;
 
 import com.deathtanium.simplethrusters.compat.MekanismFluidBridge;
+import com.deathtanium.simplethrusters.compat.SimulatedTabBridge;
 import com.deathtanium.simplethrusters.registry.ModBlocks;
-import com.deathtanium.simplethrusters.registry.ModCreativeTabs;
 import com.deathtanium.simplethrusters.registry.ModFluids;
 import com.mojang.logging.LogUtils;
 import net.minecraft.resources.ResourceLocation;
@@ -19,7 +19,6 @@ public final class SimpleThrusters {
 
     public SimpleThrusters(IEventBus modEventBus, ModContainer modContainer) {
         ModFluids.register(modEventBus);
-        ModCreativeTabs.register(modEventBus);
         ModBlocks.register(modEventBus);
         modEventBus.addListener(ModEvents::registerCapabilities);
         modEventBus.addListener(SimpleThrusters::commonSetup);
@@ -31,6 +30,9 @@ public final class SimpleThrusters {
     }
 
     private static void commonSetup(FMLCommonSetupEvent event) {
-        event.enqueueWork(MekanismFluidBridge::init);
+        event.enqueueWork(() -> {
+            MekanismFluidBridge.init();
+            SimulatedTabBridge.registerThrustItemsIntoAeronauticsSection(LOGGER);
+        });
     }
 }

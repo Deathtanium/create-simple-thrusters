@@ -18,4 +18,6 @@ Use `localRuntime` in `build.gradle` for optional in-dev mods (e.g. Create Addit
 
 Implemented in this repo: registration, recipes (Ion/Blazer), loot tables, cluster master selection, thrust via `BlockEntityPropeller` / `BlockEntitySubLevelPropellerActor`, particles, fluid + energy caps on non-nozzle faces.
 
+Thrusters and the electrolysis chamber appear under **Create Simulated’s Aeronautics banner** in the creative inventory (not a separate mod tab).
+
 Still to refine: placement helper for edge extension, electrolysis chamber (optional Create Addition), polish/balance, contraption edge cases.
