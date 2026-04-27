@@ -1,6 +1,8 @@
 package com.deathtanium.simplethrusters.content.thruster;
 
+import com.deathtanium.simplethrusters.compat.CompatLoader;
 import com.deathtanium.simplethrusters.registry.ModBlockEntities;
+import com.deathtanium.simplethrusters.registry.ModFluids;
 import com.simibubi.create.api.equipment.goggles.IHaveGoggleInformation;
 import com.simibubi.create.foundation.blockEntity.SmartBlockEntity;
 import com.simibubi.create.foundation.fluid.SmartFluidTank;
@@ -13,6 +15,7 @@ import net.minecraft.ChatFormatting;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.core.HolderLookup;
+import net.minecraft.core.particles.ColorParticleOption;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
@@ -35,9 +38,8 @@ public class ThrusterBlockEntity extends SmartBlockEntity
     private static final int FLUID_CAPACITY_BLAZER = 32_000;
     private static final int ENERGY_CAPACITY = 64_000;
 
-    private static final double CREATIVE_BASE_THRUST = 3.0;
-    private static final double ION_BASE_THRUST = 1.2;
-    private static final double BLAZER_BASE_THRUST = 2.0;
+    /** Peak thrust coefficient at redstone 15 for all types (before resource efficiency). */
+    private static final double MAX_THRUST = 3.0;
 
     private static final int ION_FLUID_COST_PER_TICK = 40;
     private static final int ION_ENERGY_COST_PER_TICK = 180;
@@ -130,19 +132,43 @@ public class ThrusterBlockEntity extends SmartBlockEntity
         return throttle > 0;
     }
 
-    private void consumeResources(double throttle) {
+    /**
+     * Scales peak thrust down when buffers cannot sustain full consumption this tick (same max thrust target for all types).
+     */
+    private double resourceEfficiency(double throttle) {
         ThrusterType type = thrusterType();
-        if (type == ThrusterType.CREATIVE || throttle <= 0) return;
+        if (type == ThrusterType.CREATIVE || throttle <= 0) return 1.0;
 
-        int fluidCost = switch (type) {
+        int fluidNeed = switch (type) {
             case ION -> Mth.ceil(ION_FLUID_COST_PER_TICK * throttle);
             case BLAZER -> Mth.ceil(BLAZER_FLUID_COST_PER_TICK * throttle);
+            default -> 0;
+        };
+        int fluidHave = fuelTank.getFluid().getAmount();
+        double fluidRatio = fluidNeed <= 0 ? 1.0 : Mth.clamp((double) fluidHave / fluidNeed, 0.0, 1.0);
+
+        double energyRatio = 1.0;
+        if (type == ThrusterType.ION) {
+            int feNeed = Mth.ceil(ION_ENERGY_COST_PER_TICK * throttle);
+            energyRatio = feNeed <= 0 ? 1.0 : Mth.clamp((double) energyStorage.getEnergyStored() / feNeed, 0.0, 1.0);
+        }
+
+        return Math.min(fluidRatio, energyRatio);
+    }
+
+    private void consumeResources(double throttle, double efficiency) {
+        ThrusterType type = thrusterType();
+        if (type == ThrusterType.CREATIVE || throttle <= 0 || efficiency <= 0) return;
+
+        int fluidCost = switch (type) {
+            case ION -> Mth.ceil(ION_FLUID_COST_PER_TICK * throttle * efficiency);
+            case BLAZER -> Mth.ceil(BLAZER_FLUID_COST_PER_TICK * throttle * efficiency);
             default -> 0;
         };
         fuelTank.drain(fluidCost, IFluidHandler.FluidAction.EXECUTE);
 
         if (type == ThrusterType.ION) {
-            int fe = Mth.ceil(ION_ENERGY_COST_PER_TICK * throttle);
+            int fe = Mth.ceil(ION_ENERGY_COST_PER_TICK * throttle * efficiency);
             energyStorage.extractEnergy(fe, false);
         }
         notifyUpdate();
@@ -165,12 +191,13 @@ public class ThrusterBlockEntity extends SmartBlockEntity
 
         double throttle = throttleForPhysics();
         if (resourceGate(throttle)) {
-            consumeResources(throttle);
+            double eff = resourceEfficiency(throttle);
+            consumeResources(throttle, eff);
         }
     }
 
     private void clientEffects() {
-        if (level == null || level.getBestNeighborSignal(worldPosition) <= 0) return;
+        if (level == null || clusterRedstoneMax() <= 0) return;
 
         Direction nozzle = nozzleDirection();
         Vec3 center = Vec3.atCenterOf(worldPosition).add(Vec3.atLowerCornerOf(nozzle.getNormal()).scale(0.52));
@@ -178,6 +205,7 @@ public class ThrusterBlockEntity extends SmartBlockEntity
         if (lvl == null) return;
 
         boolean soul = thrusterType().soulFireParticles();
+        int color = particleColorArgb();
         for (int i = 0; i < 3; i++) {
             double ox = lvl.random.nextGaussian() * 0.08;
             double oy = lvl.random.nextGaussian() * 0.08;
@@ -185,12 +213,25 @@ public class ThrusterBlockEntity extends SmartBlockEntity
             double vx = nozzle.getStepX() * 0.08 + lvl.random.nextGaussian() * 0.02;
             double vy = nozzle.getStepY() * 0.08 + lvl.random.nextGaussian() * 0.02;
             double vz = nozzle.getStepZ() * 0.08 + lvl.random.nextGaussian() * 0.02;
-            if (soul) {
+            if (color != 0) {
+                ColorParticleOption tinted =
+                        ColorParticleOption.create(ParticleTypes.ENTITY_EFFECT, color);
+                lvl.addParticle(tinted, center.x + ox, center.y + oy, center.z + oz, 0.0, 0.01, 0.0);
+            } else if (soul) {
                 lvl.addParticle(ParticleTypes.SOUL_FIRE_FLAME, center.x + ox, center.y + oy, center.z + oz, vx, vy, vz);
             } else {
                 lvl.addParticle(ParticleTypes.FLAME, center.x + ox, center.y + oy, center.z + oz, vx, vy, vz);
             }
         }
+    }
+
+    /** Mekanism-style tint when burning mapped fuels; 0 = use default flame types. */
+    private int particleColorArgb() {
+        FluidStack f = masterOrSelf().fuelTank.getFluid();
+        if (f.isEmpty()) return 0;
+        if (f.getFluid().isSame(ModFluids.hydrogenStill())) return 0xFFFFFFFF;
+        if (f.getFluid().isSame(ModFluids.oxygenStill())) return 0xFF6CE2FF;
+        return 0;
     }
 
     @Override
@@ -216,12 +257,8 @@ public class ThrusterBlockEntity extends SmartBlockEntity
         ThrusterBlockEntity master = masterOrSelf();
         double t = master.throttleForPhysics();
         if (!master.resourceGate(t)) return 0;
-        double base = switch (thrusterType()) {
-            case CREATIVE -> CREATIVE_BASE_THRUST;
-            case ION -> ION_BASE_THRUST;
-            case BLAZER -> BLAZER_BASE_THRUST;
-        };
-        return base * t;
+        double eff = master.resourceEfficiency(t);
+        return MAX_THRUST * t * eff;
     }
 
     @Override
@@ -260,10 +297,21 @@ public class ThrusterBlockEntity extends SmartBlockEntity
         if (thrusterType() != ThrusterType.ION) {
             return null;
         }
+        if (CompatLoader.createAdditionLoaded()) {
+            return null;
+        }
         if (side == nozzleDirection()) {
             return null;
         }
         return energyStorage;
+    }
+
+    public int getEnergyStoredForRender() {
+        return masterOrSelf().energyStorage.getEnergyStored();
+    }
+
+    public int getEnergyCapacityForRender() {
+        return masterOrSelf().energyStorage.getMaxEnergyStored();
     }
 
     @Override

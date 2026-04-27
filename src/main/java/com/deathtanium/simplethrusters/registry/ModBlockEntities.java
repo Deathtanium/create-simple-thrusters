@@ -1,6 +1,7 @@
 package com.deathtanium.simplethrusters.registry;
 
 import com.deathtanium.simplethrusters.SimpleThrusters;
+import com.deathtanium.simplethrusters.content.electrolysis.ElectrolysisChamberBlockEntity;
 import com.deathtanium.simplethrusters.content.thruster.ThrusterBlockEntity;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.world.level.block.entity.BlockEntityType;
@@ -21,6 +22,11 @@ public final class ModBlockEntities {
                                     ModBlocks.ION_THRUSTER.get(),
                                     ModBlocks.BLAZER_THRUSTER.get())
                             .build(null));
+
+    public static final DeferredHolder<BlockEntityType<?>, BlockEntityType<ElectrolysisChamberBlockEntity>> ELECTROLYSIS_CHAMBER =
+            REGISTER.register(
+                    "electrolysis_chamber",
+                    () -> BlockEntityType.Builder.of(ElectrolysisChamberBlockEntity::new, ModBlocks.ELECTROLYSIS_CHAMBER.get()).build(null));
 
     private ModBlockEntities() {}
 

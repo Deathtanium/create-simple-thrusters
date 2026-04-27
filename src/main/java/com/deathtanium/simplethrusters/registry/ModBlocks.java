@@ -1,6 +1,7 @@
 package com.deathtanium.simplethrusters.registry;
 
 import com.deathtanium.simplethrusters.SimpleThrusters;
+import com.deathtanium.simplethrusters.content.electrolysis.ElectrolysisChamberBlock;
 import com.deathtanium.simplethrusters.content.thruster.BlazerThrusterBlock;
 import com.deathtanium.simplethrusters.content.thruster.CreativeThrusterBlock;
 import com.deathtanium.simplethrusters.content.thruster.IonThrusterBlock;
@@ -31,6 +32,12 @@ public final class ModBlocks {
     public static final BlockEntry<BlazerThrusterBlock> BLAZER_THRUSTER =
             REGISTRATE.block("blazer_thruster", BlazerThrusterBlock::new)
                     .properties(ThrusterBlock::applyProperties)
+                    .simpleItem()
+                    .register();
+
+    public static final BlockEntry<ElectrolysisChamberBlock> ELECTROLYSIS_CHAMBER =
+            REGISTRATE.block("electrolysis_chamber", ElectrolysisChamberBlock::new)
+                    .properties(ElectrolysisChamberBlock::applyProperties)
                     .simpleItem()
                     .register();
 

@@ -22,6 +22,7 @@ public final class ModCreativeTabs {
                         output.accept(ModBlocks.CREATIVE_THRUSTER.asStack());
                         output.accept(ModBlocks.ION_THRUSTER.asStack());
                         output.accept(ModBlocks.BLAZER_THRUSTER.asStack());
+                        output.accept(ModBlocks.ELECTROLYSIS_CHAMBER.asStack());
                     })
                     .build());
 
