@@ -1,0 +1,9 @@
+{
+  "block.simple_thrusters.creative_thruster": "Creative Thruster",
+  "block.simple_thrusters.ion_thruster": "Ion Thruster",
+  "block.simple_thrusters.blazer_thruster": "Blazer Thruster",
+  "block.simple_thrusters.electrolysis_chamber": "Electrolysis Chamber",
+  "simple_thrusters.goggles.redstone": "Neighbor redstone strength (max cluster): ",
+  "simple_thrusters.goggles.energy": "Stored energy (FE): ",
+  "simple_thrusters.goggles.thrust_estimate": "Estimated thrust coefficient: "
+}

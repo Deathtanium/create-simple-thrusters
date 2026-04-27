@@ -1,2 +1,7 @@
+.gradle/
+build/
+runs/
+.idea/
+*.iml
 # Local dependency clones for API research (see docs/THRUSTER_ADDON_DESIGN.md)
 deps/
