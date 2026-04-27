@@ -1,0 +1,19 @@
+{
+  "type": "minecraft:crafting_shapeless",
+  "category": "misc",
+  "ingredients": [
+    {
+      "item": "minecraft:lightning_rod"
+    },
+    {
+      "item": "minecraft:copper_grate"
+    },
+    {
+      "item": "create:chute"
+    }
+  ],
+  "result": {
+    "id": "simple_thrusters:ion_thruster",
+    "count": 1
+  }
+}

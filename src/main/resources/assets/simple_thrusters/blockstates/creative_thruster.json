@@ -1,0 +1,20 @@
+{
+  "variants": {
+    "facing=north": {
+      "model": "simple_thrusters:block/thruster_placeholder",
+      "y": 180
+    },
+    "facing=south": {
+      "model": "simple_thrusters:block/thruster_placeholder",
+      "y": 0
+    },
+    "facing=east": {
+      "model": "simple_thrusters:block/thruster_placeholder",
+      "y": 270
+    },
+    "facing=west": {
+      "model": "simple_thrusters:block/thruster_placeholder",
+      "y": 90
+    }
+  }
+}
